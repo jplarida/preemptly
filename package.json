@@ -1,0 +1,28 @@
+{
+  "name": "preemptly",
+  "version": "0.1.0",
+  "private": true,
+  "description": "LPG Usage Tracking & Reorder App",
+  "workspaces": [
+    "apps/api",
+    "apps/api-elysia",
+    "apps/web",
+    "packages/shared-types"
+  ],
+  "scripts": {
+    "api:dev": "npm run dev -w apps/api",
+    "api-elysia:dev": "bun --watch apps/api-elysia/src/index.ts",
+    "api-elysia:start": "bun apps/api-elysia/src/index.ts",
+    "web:dev": "npm run dev -w apps/web",
+    "api:build": "npm run build -w apps/api",
+    "web:build": "npm run build -w apps/web",
+    "db:migrate": "npx prisma migrate dev",
+    "db:studio": "npx prisma studio",
+    "db:seed": "npx prisma db seed",
+    "db:generate": "npx prisma generate",
+    "types:build": "npm run build -w packages/shared-types"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

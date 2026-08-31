@@ -1,0 +1,293 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String?
+  phone     String   @unique
+  region    String   @default("PH")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  locations            Location[]
+  orders               Order[]               @relation("CustomerOrders")
+  customerRetailerLinks CustomerRetailerLink[]
+  deviceTokens         DeviceToken[]
+
+  @@map("users")
+}
+
+model Location {
+  id        String       @id @default(cuid())
+  userId    String       @map("user_id")
+  address   String
+  type      LocationType @default(HOME)
+  timezone  String       @default("Asia/Manila")
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tanks Tank[]
+
+  @@map("locations")
+}
+
+model Tank {
+  id             String     @id @default(cuid())
+  locationId     String     @map("location_id")
+  capacityKg     Float      @map("capacity_kg")
+  unit           String     @default("kg")
+  model          TankModel  @default(EXCHANGE)
+  usageLevel     UsageLevel @default(MODERATE)
+  lastRefillDate DateTime   @default(now()) @map("last_refill_date")
+  isActive       Boolean    @default(true) @map("is_active")
+  createdAt      DateTime   @default(now()) @map("created_at")
+  updatedAt      DateTime   @updatedAt @map("updated_at")
+
+  location    Location      @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  estimation  Estimation?
+  refillLogs  RefillLog[]
+  orders      Order[]
+  accuracyLogs AccuracyLog[]
+
+  @@map("tanks")
+}
+
+model Estimation {
+  id                  String          @id @default(cuid())
+  tankId              String          @unique @map("tank_id")
+  timeBasedEstimate   Float           @map("time_based_estimate")
+  correctionFactor    Float           @default(1.0) @map("correction_factor")
+  calibratedEstimate  Float           @map("calibrated_estimate")
+  confidence          Confidence      @default(LOW)
+  currentAdjustment   AdjustmentType?  @map("current_adjustment")
+  adjustmentExpiresAt DateTime?       @map("adjustment_expires_at")
+  createdAt           DateTime        @default(now()) @map("created_at")
+  updatedAt           DateTime        @updatedAt @map("updated_at")
+
+  tank Tank @relation(fields: [tankId], references: [id], onDelete: Cascade)
+
+  @@map("estimations")
+}
+
+model RefillLog {
+  id              String   @id @default(cuid())
+  tankId          String   @map("tank_id")
+  refillDate      DateTime @map("refill_date")
+  actualCycleDays Int?     @map("actual_cycle_days")
+  isOutlier       Boolean  @default(false) @map("is_outlier")
+  confirmedByUser Boolean  @default(false) @map("confirmed_by_user")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  tank Tank @relation(fields: [tankId], references: [id], onDelete: Cascade)
+
+  @@map("refill_logs")
+}
+
+model Retailer {
+  id           String   @id @default(cuid())
+  businessName String   @map("business_name")
+  ownerName    String   @map("owner_name")
+  phone        String   @unique
+  address      String
+  city         String
+  inviteCode   String   @unique @map("invite_code")
+  inviteLink   String   @unique @map("invite_link")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  customerLinks CustomerRetailerLink[]
+  orders        Order[]                @relation("RetailerOrders")
+  inviteStats   InviteStat[]
+  settings      RetailerSettings?
+  riders        Rider[]
+
+  @@map("retailers")
+}
+
+model RetailerSettings {
+  id               String   @id @default(cuid())
+  retailerId       String   @unique @map("retailer_id")
+  pricing          Json?    // Array of { capacityKg, basePrice }
+  discountTiers    Json?    @map("discount_tiers") // Array of { daysBeforeEmpty, discountAmount }
+  preemptlyZoneDays Int      @default(5) @map("preempty_zone_days")
+  discountsEnabled Boolean  @default(true) @map("discounts_enabled")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  retailer Retailer @relation(fields: [retailerId], references: [id], onDelete: Cascade)
+
+  @@map("retailer_settings")
+}
+
+model Rider {
+  id         String   @id @default(cuid())
+  retailerId String   @map("retailer_id")
+  name       String
+  phone      String   @unique
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  retailer Retailer @relation(fields: [retailerId], references: [id], onDelete: Cascade)
+  orders   Order[]  @relation("RiderOrders")
+
+  @@map("riders")
+}
+
+model CustomerRetailerLink {
+  id         String     @id @default(cuid())
+  customerId String     @map("customer_id")
+  retailerId String     @map("retailer_id")
+  linkedVia  LinkMethod @map("linked_via")
+  status     LinkStatus @default(ACTIVE)
+  isPrimary  Boolean    @default(false) @map("is_primary")
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @updatedAt @map("updated_at")
+
+  customer User     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  retailer Retailer @relation(fields: [retailerId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, retailerId])
+  @@map("customer_retailer_links")
+}
+
+model Order {
+  id                 String      @id @default(cuid())
+  tankId             String      @map("tank_id")
+  customerId         String      @map("customer_id")
+  retailerId         String      @map("retailer_id")
+  riderId            String?     @map("rider_id")
+  status             OrderStatus @default(PENDING)
+  note               String?
+  capacityKg         Float?      @map("capacity_kg")
+  deliveryAddress    String?     @map("delivery_address")
+  basePrice          Float       @default(0) @map("base_price")
+  discountAmount     Float       @default(0) @map("discount_amount")
+  finalAmount        Float       @default(0) @map("final_amount")
+  paymentStatus      String?     @map("payment_status") // PENDING, COLLECTED
+  paymentMethod      String?     @map("payment_method") // COD, GCASH, MAYA
+  confirmationMethod String?     @map("confirmation_method") // QR, CODE, MANUAL
+  confirmationCode   String?     @map("confirmation_code")
+  needsReview        Boolean     @default(false) @map("needs_review")
+  deliveredAt        DateTime?   @map("delivered_at")
+  createdAt          DateTime    @default(now()) @map("created_at")
+  updatedAt          DateTime    @updatedAt @map("updated_at")
+
+  tank     Tank      @relation(fields: [tankId], references: [id])
+  customer User      @relation("CustomerOrders", fields: [customerId], references: [id])
+  retailer Retailer  @relation("RetailerOrders", fields: [retailerId], references: [id])
+  rider    Rider?    @relation("RiderOrders", fields: [riderId], references: [id])
+
+  @@map("orders")
+}
+
+model AccuracyLog {
+  id            String  @id @default(cuid())
+  tankId        String  @map("tank_id")
+  predictedDays Float   @map("predicted_days")
+  actualDays    Int     @map("actual_days")
+  errorDays     Float   @map("error_days")
+  userFeedback  String? @map("user_feedback")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  tank Tank @relation(fields: [tankId], references: [id], onDelete: Cascade)
+
+  @@map("accuracy_logs")
+}
+
+model InviteStat {
+  id         String   @id @default(cuid())
+  retailerId String   @map("retailer_id")
+  linkClicks Int      @default(0) @map("link_clicks")
+  joins      Int      @default(0)
+  date       DateTime @db.Date
+
+  retailer Retailer @relation(fields: [retailerId], references: [id], onDelete: Cascade)
+
+  @@unique([retailerId, date])
+  @@map("invite_stats")
+}
+
+model OtpCode {
+  id        String   @id @default(cuid())
+  phone     String
+  code      String
+  expiresAt DateTime @map("expires_at")
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("otp_codes")
+}
+
+model DeviceToken {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  token     String   @unique
+  platform  String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("device_tokens")
+}
+
+// ========== Enums ==========
+
+enum LocationType {
+  HOME
+  BUSINESS
+}
+
+enum TankModel {
+  EXCHANGE
+  REFILL
+}
+
+enum UsageLevel {
+  LIGHT
+  MODERATE
+  HEAVY
+  VERY_HEAVY
+}
+
+enum Confidence {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum AdjustmentType {
+  COOKED_MORE
+  COOKED_LESS
+  NORMAL
+}
+
+enum LinkMethod {
+  INVITE_LINK
+  QR_CODE
+  MANUAL_CODE
+}
+
+enum LinkStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum OrderStatus {
+  PENDING
+  PENDING_SMS
+  CONFIRMED
+  ASSIGNED
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED_BY_CUSTOMER
+  CANCELLED_BY_RETAILER
+  REJECTED
+}

@@ -1,0 +1,25 @@
+{
+  "name": "api-elysia",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "start": "bun src/index.ts",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "elysia": "^1.2.25",
+    "@elysiajs/cors": "^1.2.0",
+    "@elysiajs/jwt": "^1.2.0",
+    "@elysiajs/cron": "^1.2.0",
+    "@prisma/client": "^7.4.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.0",
+    "prisma": "^7.4.0"
+  },
+  "prisma": {
+    "schema": "../../prisma/schema.prisma"
+  }
+}

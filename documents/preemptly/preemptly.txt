@@ -1,0 +1,83 @@
+zAXcw5Yk
+
+
+
+
+Client (upon 1st deliver lpg)
+introduction of the app
+ - dl mobile app
+ - rider interview customer asking ff:
+  - app input
+   - rider by rider
+     - name
+     - address
+     - contact number
+     - what lpg size (usually 11 kg for home)
+     - estimated consumption
+     - generate qr code - for client app to scan
+       - qr consist of the ff
+	customer details
+	 - name
+     	 - address
+     	 - contact number
+     	 - what lpg size (usually 11 kg for home)
+	Retailer Details
+	 - retailer ID
+         - name of store
+  	 - store contact phone
+         - date delivery
+         - preemptly estimated size consumption by input
+ 	   - date delivered
+           - estimated consumption
+           - pre estimated consumption of household for 11kg
+		- light consumption
+  		- regular consumption (default)
+ 		- heavy consumption   
+                - very heavy
+	   - preemptly discount per day
+ 		- 5 days = less 50 pesos price
+		- 4 days = less 50 pesos price
+		- 3 days = less 50 pesos price
+		- 2 days = less 50 pesos price
+		- 1 days = less 50 pesos price
+		- 0 days = less 0 pesos price
+	Generated Unique ID based on retailer + customer details
+
+
+
+This way, preempt can estimate what our customers consumption with-in their app even if they are not online
+to encourage to do preemptly reorder early feature.
+
+Client (reorder)
+  - preemptly notify 
+    - display estimated days left - discount if their is
+    - button preemptly
+      - replace button with QR code (will be reset when scan rider code)
+      - if internet connection detected, post online
+      - else open to sms and create preemptly formatted sms
+        - send to [store contact phone]
+	  - Hello [name of store]
+            PREEMPTLY ORDER ON: - generated id
+		by: [customer details name]
+		address: [customer details - address]
+		contact number: [customer details contact number]
+		customer lpg size: [customer details lpg size]
+	    
+  - Rider
+      Open Preemptly app
+      - if we can load sms message as reference to the app for no longer needed input
+	scan all details to generate preemptly Acknowledgement QR code for client scan and unlock/reset the clients QR code.
+
+Both Mobile app calculates how many contents left (entering preemptly reorder range)
+ - Customer get notified for preemptly reorder
+ - rider get list of upcoming preemptly prospect reorders
+
+
+
+	
+
+
+
+
+
+

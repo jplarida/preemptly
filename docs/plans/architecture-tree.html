@@ -1,0 +1,375 @@
+<title>PreEmptly API — Architecture Tree</title>
+<style>
+  :root {
+    --bg: #eef1f5;
+    --panel: #ffffff;
+    --panel-2: #f6f8fb;
+    --ink: #182231;
+    --ink-soft: #47566b;
+    --ink-faint: #8290a4;
+    --line: #d5dce6;
+    --line-strong: #c1cad8;
+
+    /* layer accents */
+    --kernel: #5566b4;      /* slate-indigo — cross-cutting kernel */
+    --kernel-bg: #eaecfa;
+    --core: #2f8a72;        /* teal — vertical-agnostic core-domain */
+    --core-bg: #e2f2ec;
+    --pack: #c06a24;        /* flame amber — LPG-specific pack */
+    --pack-bg: #fbeede;
+    --db: #7b5aa6;          /* violet — shared datastore */
+    --db-bg: #efe8f6;
+    --legacy: #9aa4b3;      /* grey — legacy, to delete */
+    --seam: #b8433a;        /* the split-ready seams */
+    --seam-bg: #fbe6e3;
+
+    --mono: ui-monospace, "SFMono-Regular", "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
+    --sans: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+
+    --radius: 10px;
+    --maxw: 1080px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f141c;
+      --panel: #161d27;
+      --panel-2: #1a222e;
+      --ink: #e7edf5;
+      --ink-soft: #a6b3c6;
+      --ink-faint: #6a7a90;
+      --line: #2a3543;
+      --line-strong: #384759;
+
+      --kernel: #97a4ec;  --kernel-bg: #23294a;
+      --core:   #57c4a5;  --core-bg:   #163029;
+      --pack:   #e79a55;  --pack-bg:   #362415;
+      --db:     #b79ae0;  --db-bg:     #29203a;
+      --legacy: #7b8798;  --legacy-bg: #232c38;
+      --seam:   #f0837a;  --seam-bg:   #3a201d;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #eef1f5; --panel: #ffffff; --panel-2: #f6f8fb;
+    --ink: #182231; --ink-soft: #47566b; --ink-faint: #8290a4;
+    --line: #d5dce6; --line-strong: #c1cad8;
+    --kernel: #5566b4; --kernel-bg: #eaecfa;
+    --core: #2f8a72; --core-bg: #e2f2ec;
+    --pack: #c06a24; --pack-bg: #fbeede;
+    --db: #7b5aa6; --db-bg: #efe8f6;
+    --legacy: #9aa4b3; --legacy-bg: #eef1f5;
+    --seam: #b8433a; --seam-bg: #fbe6e3;
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f141c; --panel: #161d27; --panel-2: #1a222e;
+    --ink: #e7edf5; --ink-soft: #a6b3c6; --ink-faint: #6a7a90;
+    --line: #2a3543; --line-strong: #384759;
+    --kernel: #97a4ec; --kernel-bg: #23294a;
+    --core: #57c4a5; --core-bg: #163029;
+    --pack: #e79a55; --pack-bg: #362415;
+    --db: #b79ae0; --db-bg: #29203a;
+    --legacy: #7b8798; --legacy-bg: #232c38;
+    --seam: #f0837a; --seam-bg: #3a201d;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 48px 24px 72px; }
+
+  header { margin-bottom: 8px; }
+  .eyebrow {
+    font-size: 12px; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--ink-faint); font-weight: 600;
+  }
+  h1 {
+    font-size: clamp(26px, 4vw, 38px); line-height: 1.1; margin: 8px 0 6px;
+    letter-spacing: -.02em; text-wrap: balance; font-weight: 700;
+  }
+  h1 .mono { font-family: var(--mono); font-weight: 600; color: var(--kernel); font-size: .82em; }
+  .lede { color: var(--ink-soft); max-width: 68ch; font-size: 15px; }
+
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 22px 0 30px;
+    padding: 14px 16px; background: var(--panel); border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+  .key { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--ink-soft); }
+  .dot { width: 11px; height: 11px; border-radius: 3px; flex: none; }
+  .dot.kernel { background: var(--kernel); }
+  .dot.core   { background: var(--core); }
+  .dot.pack   { background: var(--pack); }
+  .dot.db     { background: var(--db); }
+  .dot.legacy { background: var(--legacy); }
+  .dot.seam   { background: var(--seam); border-radius: 50%; }
+
+  .panel {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 22px 24px; margin-bottom: 22px;
+  }
+  .panel > h2 {
+    font-size: 12px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-faint); margin: 0 0 16px; font-weight: 700;
+  }
+
+  /* ---- conceptual stack ---- */
+  .stack { display: grid; gap: 10px; }
+  .layer {
+    border-radius: var(--radius); padding: 14px 16px;
+    border: 1px solid var(--line-strong);
+    display: grid; grid-template-columns: 150px 1fr; gap: 4px 18px; align-items: baseline;
+  }
+  .layer .lname { font-weight: 700; font-size: 14px; }
+  .layer .ldesc { color: var(--ink-soft); font-size: 13px; }
+  .layer.k { background: var(--kernel-bg); border-color: color-mix(in srgb, var(--kernel) 40%, transparent); }
+  .layer.k .lname { color: var(--kernel); }
+  .layer.c { background: var(--core-bg); border-color: color-mix(in srgb, var(--core) 40%, transparent); }
+  .layer.c .lname { color: var(--core); }
+  .layer.p { background: var(--pack-bg); border-color: color-mix(in srgb, var(--pack) 45%, transparent); }
+  .layer.p .lname { color: var(--pack); }
+  .layer.d { background: var(--db-bg); border-color: color-mix(in srgb, var(--db) 40%, transparent); }
+  .layer.d .lname { color: var(--db); }
+  .stack .arrow { text-align: center; color: var(--ink-faint); font-size: 12px; letter-spacing: .1em; }
+
+  /* ---- tree ---- */
+  .treewrap { overflow-x: auto; }
+  ul.tree, ul.tree ul { list-style: none; margin: 0; padding: 0; }
+  ul.tree { font-family: var(--mono); font-size: 13.5px; min-width: 520px; }
+  ul.tree ul { margin-left: 22px; border-left: 1px solid var(--line-strong); }
+  ul.tree li { position: relative; padding: 2px 0 2px 20px; }
+  ul.tree ul > li::before {
+    content: ""; position: absolute; left: 0; top: 15px;
+    width: 14px; height: 1px; background: var(--line-strong);
+  }
+  .node { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .name { font-weight: 600; }
+  .cmt { font-family: var(--sans); font-size: 12px; color: var(--ink-faint); font-weight: 400; }
+  .name.kernel { color: var(--kernel); }
+  .name.core   { color: var(--core); }
+  .name.pack   { color: var(--pack); }
+  .name.db     { color: var(--db); }
+  .name.legacy { color: var(--legacy); }
+  .name.root   { color: var(--ink); }
+  .name.dir    { color: var(--ink); }
+
+  .tag {
+    font-family: var(--sans); font-size: 10.5px; font-weight: 700;
+    letter-spacing: .04em; padding: 1px 7px; border-radius: 999px;
+    text-transform: uppercase;
+  }
+  .tag.seam { background: var(--seam-bg); color: var(--seam); border: 1px solid color-mix(in srgb, var(--seam) 45%, transparent); }
+  .tag.new  { background: var(--kernel-bg); color: var(--kernel); border: 1px solid color-mix(in srgb, var(--kernel) 45%, transparent); }
+  .tag.tenant { background: var(--core-bg); color: var(--core); border: 1px solid color-mix(in srgb, var(--core) 45%, transparent); }
+  .tag.del  { background: var(--legacy-bg, var(--panel-2)); color: var(--legacy); border: 1px solid var(--line-strong); }
+
+  /* ---- seams + anatomy ---- */
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  @media (max-width: 760px) { .cols { grid-template-columns: 1fr; } .layer { grid-template-columns: 1fr; } }
+
+  .seams { display: grid; gap: 10px; }
+  .seam-row {
+    display: grid; grid-template-columns: 26px 1fr; gap: 12px; align-items: start;
+    padding: 11px 13px; background: var(--panel-2); border: 1px solid var(--line);
+    border-radius: 8px; border-left: 3px solid var(--seam);
+  }
+  .seam-n {
+    font-family: var(--mono); font-weight: 700; color: var(--seam);
+    background: var(--seam-bg); border-radius: 6px; text-align: center;
+    padding: 3px 0; font-size: 13px;
+  }
+  .seam-row .st { font-weight: 700; font-size: 13.5px; }
+  .seam-row .st code { font-family: var(--mono); font-size: 12.5px; color: var(--ink-soft); font-weight: 600; }
+  .seam-row .sd { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
+  .seam-row .sd b { color: var(--ink); font-weight: 600; }
+
+  .anatomy { font-family: var(--mono); font-size: 12.5px; display: grid; gap: 5px; }
+  .anatomy .f { display: grid; grid-template-columns: 210px 1fr; gap: 10px; align-items: baseline; padding: 5px 8px; border-radius: 6px; }
+  .anatomy .f:nth-child(odd) { background: var(--panel-2); }
+  .anatomy .f .fn { color: var(--ink); font-weight: 600; white-space: nowrap; }
+  .anatomy .f .fn .seamdot { color: var(--seam); font-weight: 700; }
+  .anatomy .f .fd { font-family: var(--sans); font-size: 11.5px; color: var(--ink-soft); }
+
+  footer { margin-top: 30px; color: var(--ink-faint); font-size: 12px; }
+  footer code { font-family: var(--mono); }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">PreEmptly · LPG pre-order platform · Phase 1</div>
+    <h1>Architecture Tree — <span class="mono">apps/api-core</span></h1>
+    <p class="lede">A greenfield, split-ready, multi-tenant backend: a cross-cutting <b>kernel</b>, a
+      vertical-agnostic <b>core-domain</b>, and swappable <b>domain packs</b> — LPG is pack #1. Any module
+      extracts into its own service later through four injected seams, with no business-logic rewrite.</p>
+  </header>
+
+  <div class="legend">
+    <span class="key"><span class="dot kernel"></span> Kernel — cross-cutting platform</span>
+    <span class="key"><span class="dot core"></span> core-domain — vertical-agnostic</span>
+    <span class="key"><span class="dot pack"></span> pack-lpg — LPG-specific</span>
+    <span class="key"><span class="dot db"></span> Shared datastore</span>
+    <span class="key"><span class="dot legacy"></span> Legacy — deleted at cutover</span>
+    <span class="key"><span class="dot seam"></span> Split-ready seam</span>
+  </div>
+
+  <!-- conceptual stack -->
+  <section class="panel">
+    <h2>The deployable, conceptually</h2>
+    <div class="stack">
+      <div class="layer p">
+        <span class="lname">packs/pack-lpg</span>
+        <span class="ldesc">tank asset · refills · riders · kg/day model · delivery lifecycle · preempty scan — a new vertical is a new pack, never a core edit</span>
+      </div>
+      <div class="arrow">▲ mounted by the pack registry, gated per-tenant entitlement</div>
+      <div class="layer c">
+        <span class="lname">core-domain</span>
+        <span class="ldesc">users · place · provider (tenant) · linking · service-request · pricing · prediction · notifications · identity</span>
+      </div>
+      <div class="arrow">▲ built on</div>
+      <div class="layer k">
+        <span class="lname">platform / kernel</span>
+        <span class="ldesc">config · db + RLS · redis · http · logging · observability · events bus · pack registry · auth guards</span>
+      </div>
+      <div class="arrow">▼ persists to</div>
+      <div class="layer d">
+        <span class="lname">Neon PostgreSQL</span>
+        <span class="ldesc">one shared DB · polymorphic asset / service_request / prediction_log · Row-Level Security backstop</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- the tree -->
+  <section class="panel">
+    <h2>Package tree</h2>
+    <div class="treewrap">
+      <ul class="tree">
+        <li>
+          <span class="node"><span class="name root">preempty/</span><span class="cmt">monorepo root</span></span>
+          <ul>
+            <li>
+              <span class="node"><span class="name dir">prisma/</span></span>
+              <ul>
+                <li><span class="node"><span class="name db">schema.prisma</span><span class="cmt">SHARED · + asset · service_request · prediction_log · RLS policies</span></span></li>
+              </ul>
+            </li>
+            <li>
+              <span class="node"><span class="name dir">apps/</span></span>
+              <ul>
+                <li>
+                  <span class="node"><span class="name kernel">api-core/</span><span class="tag new">new</span><span class="cmt">Elysia / Bun — one deployable</span></span>
+                  <ul>
+                    <li><span class="node"><span class="name dir">src/</span></span>
+                      <ul>
+                        <li><span class="node"><span class="name">main.ts</span><span class="cmt">composition root → build deps → listen</span></span></li>
+                        <li><span class="node"><span class="name">app.ts</span><span class="cmt">buildApp(deps) pure factory · no listen · testable</span></span></li>
+                        <li><span class="node"><span class="name dir">config/</span></span>
+                          <ul><li><span class="node"><span class="name">env.ts</span><span class="cmt">TypeBox env · fail-fast at boot</span></span></li></ul>
+                        </li>
+                        <li>
+                          <span class="node"><span class="name kernel">platform/</span><span class="cmt">the kernel — cross-cutting</span></span>
+                          <ul>
+                            <li><span class="node"><span class="name dir">db/</span><span class="cmt">prisma.ts · rls.ts (SET LOCAL app.current_retailer)</span></span></li>
+                            <li><span class="node"><span class="name dir">redis/</span><span class="cmt">redis.ts provider</span></span></li>
+                            <li><span class="node"><span class="name dir">http/</span><span class="cmt">error-handler · security-headers · cors</span></span></li>
+                            <li><span class="node"><span class="name dir">logging/</span><span class="cmt">logger.ts — Pino · PII scrubbing</span></span></li>
+                            <li><span class="node"><span class="name dir">observability/</span><span class="cmt">otel.ts · Sentry</span></span></li>
+                            <li><span class="node"><span class="name dir">auth/</span><span class="cmt">guards — stubbed in 01, filled in 02</span></span></li>
+                            <li><span class="node"><span class="name dir">events/</span><span class="name">bus.ts</span><span class="tag seam">seam 1</span><span class="cmt">in-memory + outbox → NATS/BullMQ</span></span></li>
+                            <li><span class="node"><span class="name dir">registry/</span><span class="name">pack.ts</span><span class="tag seam">seam 4</span><span class="cmt">DomainPack iface · mounts enabled packs</span></span></li>
+                          </ul>
+                        </li>
+                        <li>
+                          <span class="node"><span class="name core">modules/</span><span class="cmt">core-domain — vertical-agnostic</span></span>
+                          <ul>
+                            <li><span class="node"><span class="name core">health/</span></span></li>
+                            <li><span class="node"><span class="name core">identity/</span><span class="cmt">OTP · asymmetric JWT (02)</span></span></li>
+                            <li><span class="node"><span class="name core">users/</span></span></li>
+                            <li><span class="node"><span class="name core">place/</span><span class="cmt">← locations</span></span></li>
+                            <li><span class="node"><span class="name core">provider/</span><span class="tag tenant">tenant</span><span class="cmt">← retailers</span></span></li>
+                            <li><span class="node"><span class="name core">linking/</span><span class="cmt">assertLinked — retailer ↔ consumer</span></span></li>
+                            <li><span class="node"><span class="name core">service-request/</span><span class="cmt">← orders · no required tank FK · IDOR fixed</span></span></li>
+                            <li><span class="node"><span class="name core">pricing/</span><span class="cmt">← discounts</span></span></li>
+                            <li><span class="node"><span class="name core">prediction/</span><span class="cmt">engine behind ConsumptionModel (04)</span></span></li>
+                            <li><span class="node"><span class="name core">notifications/</span><span class="cmt">owns DeviceToken</span></span></li>
+                          </ul>
+                        </li>
+                        <li>
+                          <span class="node"><span class="name pack">packs/pack-lpg/</span><span class="cmt">LPG-specific · the first DomainPack</span></span>
+                          <ul>
+                            <li><span class="node"><span class="name pack">pack.ts</span><span class="cmt">DomainPack declaration + entitlement</span></span></li>
+                            <li><span class="node"><span class="name pack">asset.tank/</span><span class="cmt">Tank → asset(vertical=lpg, type=tank)</span></span></li>
+                            <li><span class="node"><span class="name pack">refills/</span><span class="cmt">DeliveryConfirmed → RefillLogged</span></span></li>
+                            <li><span class="node"><span class="name pack">riders/</span></span></li>
+                            <li><span class="node"><span class="name pack">consumption-model/</span><span class="cmt">kg/day model for prediction</span></span></li>
+                            <li><span class="node"><span class="name pack">delivery/</span><span class="cmt">order lifecycle · lifecycleKey=delivery (09)</span></span></li>
+                            <li><span class="node"><span class="name pack">jobs/preempty-scan</span><span class="cmt">emits TankEnteredPreemptyZone</span></span></li>
+                          </ul>
+                        </li>
+                      </ul>
+                    </li>
+                  </ul>
+                </li>
+                <li><span class="node"><span class="name legacy">api-elysia/</span><span class="tag del">delete</span><span class="cmt">legacy — ported into api-core, removed at cutover (08)</span></span></li>
+                <li><span class="node"><span class="name dir">web/</span><span class="cmt">Next.js — retailer dashboard</span></span></li>
+                <li><span class="node"><span class="name dir">mobile/</span><span class="cmt">Flutter — consumer + rider builds</span></span></li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="cols">
+    <!-- seams -->
+    <section class="panel">
+      <h2>The four seams — split-ready by design</h2>
+      <div class="seams">
+        <div class="seam-row">
+          <span class="seam-n">1</span>
+          <div><div class="st">Event bus &nbsp;<code>platform/events/bus.ts</code></div>
+            <div class="sd"><b>Now:</b> in-memory + outbox relay &nbsp;·&nbsp; <b>Later:</b> NATS / BullMQ</div></div>
+        </div>
+        <div class="seam-row">
+          <span class="seam-n">2</span>
+          <div><div class="st">Contract &nbsp;<code>&lt;module&gt;.contract.ts</code></div>
+            <div class="sd"><b>Now:</b> direct in-process call &nbsp;·&nbsp; <b>Later:</b> HTTP/gRPC client, same interface</div></div>
+        </div>
+        <div class="seam-row">
+          <span class="seam-n">3</span>
+          <div><div class="st">Repository &nbsp;<code>&lt;module&gt;.repository.ts</code></div>
+            <div class="sd"><b>Now:</b> shared Prisma on one Neon DB &nbsp;·&nbsp; <b>Later:</b> module's tables move to its own DB</div></div>
+        </div>
+        <div class="seam-row">
+          <span class="seam-n">4</span>
+          <div><div class="st">Pack registry &nbsp;<code>platform/registry/pack.ts</code></div>
+            <div class="sd"><b>Now:</b> mounts LPG &nbsp;·&nbsp; <b>Later:</b> safety / health / home-services drop in as packs</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- anatomy -->
+    <section class="panel">
+      <h2>Per-module anatomy — <code style="font-family:var(--mono);font-size:12px">modules/&lt;module&gt;/</code></h2>
+      <div class="anatomy">
+        <div class="f"><span class="fn">&lt;module&gt;.routes.ts</span><span class="fd">thin: validate + requireRole + object-policy + delegate</span></div>
+        <div class="f"><span class="fn">&lt;module&gt;.service.ts</span><span class="fd">business logic — depends on ports, never prisma</span></div>
+        <div class="f"><span class="fn">&lt;module&gt;.repository.ts <span class="seamdot">◆</span></span><span class="fd">the only place its tables are touched · seam 3</span></div>
+        <div class="f"><span class="fn">&lt;module&gt;.contract.ts <span class="seamdot">◆</span></span><span class="fd">public interface other modules call · seam 2</span></div>
+        <div class="f"><span class="fn">&lt;module&gt;.model.ts</span><span class="fd">TypeBox · additionalProperties:false · +63 phone</span></div>
+        <div class="f"><span class="fn">&lt;module&gt;.events.ts</span><span class="fd">events it publishes / subscribes</span></div>
+        <div class="f"><span class="fn">&lt;module&gt;.unit.test.ts</span><span class="fd">mocked repo + bus</span></div>
+        <div class="f"><span class="fn">&lt;module&gt;.integration.test.ts</span><span class="fd">real Postgres via app.handle</span></div>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    Tenant = retailer · three-axis isolation (<code>retailerId</code> / <code>userId</code> / <code>assertLinked</code>) with Postgres RLS as backstop.
+    Source: <code>docs/plans/final</code> (sessions 01 &amp; 05) + <code>memory/architecture.md</code>.
+  </footer>
+</div>
