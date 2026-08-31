@@ -1,8 +1,14 @@
-## 2026-08-31 · default — Git remote set up (repo still uncommitted)
+## 2026-08-31 · default — Git repo set up, consolidated, committed and pushed
 
-Monorepo `D:\Personal\projects\preempty` wired to GitHub for the first time.
+> **Snapshot note.** This file is a committed *copy* of the coverage inbox, not the live one.
+> Live inbox: `<mycodebuddy>/projects/preempty/memory/_inbox/default.md`.
+> An earlier revision of this file (committed in `5959a11`) was captured mid-session and said
+> "the repo has zero commits and no backup", and recorded pre-final locations for
+> `documents/healthcare/` and `.claude/`. All of that is corrected below.
 
-- **Remote:** `origin` → `git@personaldev:jplarida/preemptly.git`
+**Remote:** `origin` → `git@personaldev:jplarida/preemptly.git` → https://github.com/jplarida/preemptly
+(**Private**, `main` @ `5959a11`, 383 files — created and pushed 2026-08-31).
+
 - **`personaldev`** = ssh alias in `C:\Users\User\.ssh\config` → github.com via `~/.ssh/id_rsa_jong`.
   Verified `ssh -T` lands on account **jplarida**. Note: `id_rsa_jong` and `id_ed25519` are the
   **same key** (identical fingerprint `SHA256:R3GWPNLVOvM4TvhN8sEm5hIq+gEaN1mNe+FMvNXTBgc`, RSA-4096);
@@ -12,15 +18,20 @@ Monorepo `D:\Personal\projects\preempty` wired to GitHub for the first time.
 - **Branch:** unborn `master` → `main` via `git symbolic-ref HEAD refs/heads/main`
   (`git branch -m` does not work with zero commits).
 
-**Repo scope decided this session:**
-- `docs/plans/` (33 files, the api-core planning set) **copied in** from `D:\work\preempty\docs\` —
-  now versioned, kept separate from the older `documents/` tree. Launcher-stub copy left in place.
-- `documents/healthcare/` (18 files, separate product line) **moved out** → `D:\work\preempty\documents\healthcare\`.
-- `.claude/` **moved out** → merged into `D:\work\preempty\.claude\`, and added to `.gitignore`.
-  Collisions preserved, not overwritten: monorepo copies landed as `settings.local.monorepo.json`
-  and `sessions/.current-session.monorepo`. **The 9 `project-session-*`/`task-*` slash commands now
-  live only in the launcher stub** — they are no longer in the monorepo.
+**Repo scope — final state (verified on disk):**
+- `docs/plans/` — **33 files**, the api-core planning set, copied in from `D:\work\preempty\docs\`.
+  Versioned, kept separate from the older `documents/` tree.
+- `docs/memory/` — **12 files**, copied in from the filesystem-memory dir. Includes this snapshot.
+- `documents/healthcare/` — **moved OUT to `D:\Personal\projects\hsc-platform\documents\healthcare\`**
+  (18 files), its own private repo: https://github.com/jplarida/hsc-platform (`main` @ `631f1db`).
+  Separate product, separate stack. Split happened *before* any commit, so no history surgery.
+- `.claude/` — **present in the monorepo and gitignored** (`.gitignore:26`). On disk, never committed.
+  All **9 `project-session-*` / `task-*` slash commands are here**, plus the session notes.
 
-**STILL PENDING — the repo has zero commits and no backup.**
-GitHub repo `jplarida/preemptly` must be created (empty) before any push; `gh` CLI is not installed
-on this machine. Nothing was committed or pushed this session.
+**Sibling repo:** `hsc-platform` at `D:\Personal\projects\hsc-platform` — Private, `main` @ `631f1db`,
+19 files. Same identity and `personaldev` alias.
+
+**Safe to delete:** `D:\work\preempty` (byte-for-byte redundant) and `D:\work\documents\preempty`
+(stale PRE-RENAME copy — `preempty.*` vs the repo's `preemptly.*`).
+
+Full handoff: `.claude/sessions/2026-08-31-git-repo-setup-and-consolidation.md`.
